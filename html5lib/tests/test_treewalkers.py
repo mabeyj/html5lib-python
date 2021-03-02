@@ -124,17 +124,76 @@ def test_fragment_single_char(tree, char):
 
 
 @pytest.mark.skipif(treeTypes["lxml"] is None, reason="lxml not importable")
-def test_lxml_xml():
+def test_lxml_xml_tree():
+    expected = [
+        {'name': 'html', 'publicId': None, 'systemId': None, 'type': 'Doctype'},
+        {'data': {}, 'name': 'html', 'namespace': None, 'type': 'StartTag'},
+        {'name': 'html', 'namespace': None, 'type': 'EndTag'}
+    ]
+
+    lxmltree = lxml.etree.fromstring('<!DOCTYPE html><html></html>').getroottree()
+    walker = treewalkers.getTreeWalker('lxml')
+    output = Lint(walker(lxmltree))
+
+    assert list(output) == expected
+
+
+@pytest.mark.skipif(treeTypes["lxml"] is None, reason="lxml not importable")
+def test_lxml_xml_root_element():
     expected = [
         {'data': {}, 'name': 'div', 'namespace': None, 'type': 'StartTag'},
+        {'data': 'a', 'type': 'Characters'},
         {'data': {}, 'name': 'div', 'namespace': None, 'type': 'StartTag'},
+        {'data': 'b', 'type': 'Characters'},
         {'name': 'div', 'namespace': None, 'type': 'EndTag'},
+        {'data': 'c', 'type': 'Characters'},
+        {'data': {}, 'name': 'p', 'namespace': None, 'type': 'StartTag'},
+        {'name': 'p', 'namespace': None, 'type': 'EndTag'},
         {'name': 'div', 'namespace': None, 'type': 'EndTag'}
     ]
 
-    lxmltree = lxml.etree.fromstring('<div><div></div></div>')
+    lxmltree = lxml.etree.fromstring('<div>a<div>b</div>c<p></p></div>')
     walker = treewalkers.getTreeWalker('lxml')
     output = Lint(walker(lxmltree))
+
+    assert list(output) == expected
+
+
+@pytest.mark.skipif(treeTypes["lxml"] is None, reason="lxml not importable")
+def test_lxml_xml_child_element():
+    expected = [
+        {'data': {}, 'name': 'div', 'namespace': None, 'type': 'StartTag'},
+        {'data': 'a', 'type': 'Characters'},
+        {'data': {}, 'name': 'p', 'namespace': None, 'type': 'StartTag'},
+        {'data': 'b', 'type': 'Characters'},
+        {'name': 'p', 'namespace': None, 'type': 'EndTag'},
+        {'data': 'c', 'type': 'Characters'},
+        {'name': 'div', 'namespace': None, 'type': 'EndTag'}
+    ]
+
+    lxmltree = lxml.etree.fromstring('<body>x<p>x</p>x<div>a<p>b</p>c</div>x<p>x</p>x</body>')
+    walker = treewalkers.getTreeWalker('lxml')
+    output = Lint(walker(lxmltree[1]))
+
+    assert list(output) == expected
+
+
+@pytest.mark.skipif(treeTypes["lxml"] is None, reason="lxml not importable")
+def test_lxml_xml_fragment():
+    expected = [
+        {'data': {}, 'name': 'p', 'namespace': None, 'type': 'StartTag'},
+        {'data': 'a', 'type': 'Characters'},
+        {'name': 'p', 'namespace': None, 'type': 'EndTag'},
+        {'data': 'b', 'type': 'Characters'},
+        {'data': {}, 'name': 'p', 'namespace': None, 'type': 'StartTag'},
+        {'data': 'c', 'type': 'Characters'},
+        {'name': 'p', 'namespace': None, 'type': 'EndTag'},
+        {'data': 'd', 'type': 'Characters'}
+    ]
+
+    lxmltree = lxml.etree.fromstring('<body>x<p>a</p>b<p>x</p>x<p>c</p>d</body>')
+    walker = treewalkers.getTreeWalker('lxml')
+    output = Lint(walker([lxmltree[0], lxmltree[2]]))
 
     assert list(output) == expected
 
