@@ -37,13 +37,13 @@ class Root(object):
         try:
             node = et.getroot()
         except AttributeError:
-            node = et
-
-        while node.getprevious() is not None:
-            node = node.getprevious()
-        while node is not None:
-            self.children.append(node)
-            node = node.getnext()
+            self.children.append(et)
+        else:
+            while node.getprevious() is not None:
+                node = node.getprevious()
+            while node is not None:
+                self.children.append(node)
+                node = node.getnext()
 
         self.text = None
         self.tail = None
@@ -131,7 +131,7 @@ class TreeWalker(base.NonRecursiveTreeWalker):
             self.fragmentChildren = set(tree)
             tree = FragmentRoot(tree)
         else:
-            self.fragmentChildren = set()
+            self.fragmentChildren = {tree}
             tree = Root(tree)
         base.NonRecursiveTreeWalker.__init__(self, tree)
         self.filter = _ihatexml.InfosetFilter()
@@ -199,6 +199,8 @@ class TreeWalker(base.NonRecursiveTreeWalker):
                     return None
             else:  # tail
                 return node.getnext()
+        elif node in self.fragmentChildren:
+            return None
 
         return (node, "tail") if node.tail else node.getnext()
 
